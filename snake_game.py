@@ -2,6 +2,8 @@ from tkinter import *
 from random import randint
 from database import Database
 from game_settings import *
+import winsound
+import threading
 
 class Game:
     def __init__(self, canvas):
@@ -19,6 +21,26 @@ class Game:
         
         self.reset_game()
         self.start_game_loop()
+
+    def play_eat_sound(self):
+        """Воспроизведение звука поедания яблока (бип)"""
+        try:
+            # Частота 1000 Гц, длительность 100 мс
+            threading.Thread(target=lambda: winsound.Beep(1000, 100), daemon=True).start()
+        except:
+            pass
+
+    def play_game_over_sound(self):
+        """Воспроизведение звука проигрыша"""
+        try:
+            # Три коротких бипа: 500 Гц, 200 мс с паузами
+            def play():
+                winsound.Beep(500, 200)
+                winsound.Beep(500, 200)
+                winsound.Beep(300, 300)
+            threading.Thread(target=play, daemon=True).start()
+        except:
+            pass
 
     def start_game_loop(self):
         """Запуск игрового цикла"""
@@ -273,9 +295,6 @@ class Game:
         key = event.keysym
         key_char = event.char  # Получаем символ, который был введен
         
-        # Отладка - выводим информацию о нажатой клавише в консоль
-        print(f"Нажата клавиша: keysym='{key}', char='{key_char}'")
-        
         # Если игра окончена
         if self.game_over:
             # Проверяем все возможные варианты для рестарта
@@ -283,7 +302,6 @@ class Game:
                 key.lower() == 'k' or          
                 key_char == 'к' or              
                 key_char == 'К'):              
-                print("Запускаем диалог рекордов")
                 self.show_leaderboard_dialog()
             return
         
@@ -330,15 +348,15 @@ class Game:
             # Проверка на столкновение со стенами
             if [x, y] in self.walls:
                 self.game_over = True
+                self.play_game_over_sound()  # Звук проигрыша
                 self.draw()
-                # Не вызываем диалог сразу, ждем нажатия R
                 return
             
             # Проверка на столкновение с хвостом
             if [x, y] in self.snake_coords:
                 self.game_over = True
+                self.play_game_over_sound()  # Звук проигрыша
                 self.draw()
-                # Не вызываем диалог сразу, ждем нажатия R
                 return
             
             # Логика движения и роста
@@ -349,6 +367,7 @@ class Game:
             if [x, y] in self.apples:
                 self.replace_apple([x, y])
                 self.score += 1
+                self.play_eat_sound()  # Звук поедания яблока (бип)
                 ate_apple = True
             
             if not ate_apple:
